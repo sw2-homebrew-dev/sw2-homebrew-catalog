@@ -1,0 +1,64 @@
+name: CI
+# Pull requests: tests, record checks, scope check, and a full artifact
+# verification of changed records.  main: verify everything, then publish the
+# site to GitHub Pages.  Nothing submitted is ever executed.
+on:
+  pull_request:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '17 4 * * *'   # nightly re-verify catches deleted or replaced releases
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: python3 -m unittest discover -s tests
+      - run: python3 -m catalog check
+      - name: Submission scope (apps/*.json only)
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository
+        run: python3 -m catalog pr-scope "origin/${{ github.base_ref }}"
+      - name: Verify changed records
+        if: github.event_name == 'pull_request'
+        run: |
+          changed=$(git diff --name-only "origin/${{ github.base_ref }}...HEAD" -- 'apps/*.json' | while read f; do [ -f "$f" ] && echo "$f"; done)
+          if [ -n "$changed" ]; then python3 -m catalog verify $changed; else echo "no records changed"; fi
+
+  publish:
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    needs: check
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: python3 -m catalog verify
+      - run: python3 -m catalog build --out _site
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with: {path: _site}
+      - id: deploy
+        uses: actions/deploy-pages@v4

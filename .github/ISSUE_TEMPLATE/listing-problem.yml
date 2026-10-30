@@ -1,0 +1,17 @@
+name: Problem with a listing
+description: Broken download, wrong details, or a request to remove an app
+labels: [listing]
+body:
+  - type: input
+    id: app
+    attributes: {label: App id, placeholder: my-app}
+    validations: {required: true}
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Problem
+      options: [Download fails, Wrong information, Does not run, Withdrawal by the author, Other]
+    validations: {required: true}
+  - type: textarea
+    id: details
+    attributes: {label: Details}

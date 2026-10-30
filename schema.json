@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "sw2-homebrew-catalog app record (apps/<id>.json)",
+  "description": "Editor hints only; catalog/records.py is authoritative.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "name", "kind", "version", "description", "author", "category",
+               "license", "source_repo", "artifact_url", "sha256", "size"],
+  "properties": {
+    "id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9._-]{0,63}$"},
+    "name": {"type": "string", "maxLength": 48},
+    "kind": {"enum": ["native", "gpubrew"]},
+    "version": {"type": "string", "pattern": "^[0-9A-Za-z][0-9A-Za-z.+_-]{0,31}$"},
+    "description": {"type": "string", "maxLength": 160},
+    "author": {"type": "string", "maxLength": 32},
+    "category": {"enum": ["game", "emulator", "media", "utility", "tool", "demo", "app"]},
+    "license": {"type": "string"},
+    "source_repo": {"type": "string", "pattern": "^https://"},
+    "homepage": {"type": "string", "pattern": "^https://"},
+    "artifact_url": {"type": "string", "pattern": "^https://.*\\.zip$"},
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "size": {"type": "integer", "minimum": 1, "maximum": 268435456},
+    "icon_url": {"type": "string", "pattern": "^https://"},
+    "screenshots": {"type": "array", "maxItems": 8, "items": {"type": "string", "pattern": "^https://"}},
+    "min_sdk": {"type": "string"},
+    "notes": {"type": "string", "maxLength": 500},
+    "added": {"type": "string"},
+    "updated": {"type": "string"}
+  }
+}
